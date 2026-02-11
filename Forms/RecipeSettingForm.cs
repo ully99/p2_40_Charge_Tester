@@ -57,7 +57,9 @@ namespace p2_40_Charge_Tester.Forms
             table.Rows.Add(4, "SDP", _local.SDP_Enable);
             table.Rows.Add(5, "DCP", _local.DCP_Enable);
             table.Rows.Add(6, "HVDCP", _local.HVDCP_Enable); 
-            table.Rows.Add(7, "MES", _local.MES_Enable);
+            table.Rows.Add(7, "PPS", _local.PPS_Enable);
+            table.Rows.Add(8, "CHARGE COUNT RESET", _local.CHARGE_COUNT_RESET_Enable);
+            table.Rows.Add(9, "MES", _local.MES_Enable); 
 
             return table;
         }
@@ -140,6 +142,27 @@ namespace p2_40_Charge_Tester.Forms
                     table.Rows.Add("[판정] USB_HVDCP Current Max (mA)", _local.HVDCP_USB_Current_Max);
                     table.Rows.Add("[판정] CHG_HVDCP Current Min (mA)", _local.HVDCP_CHG_Current_Min);
                     table.Rows.Add("[판정] CHG_HVDCP Current Max (mA)", _local.HVDCP_CHG_Current_Max);
+                    break;
+
+                case "PPS": 
+                    table.Rows.Add("[Delay] Step", _local.PPS_Step_Delay);
+                    table.Rows.Add("[Delay] PBA Delay", _local.PPS_Pba_Delay);
+                    table.Rows.Add("[Delay] PPS TA Delay", _local.PPS_TA_Delay);
+                    table.Rows.Add("[Delay] TCP 01", _local.PPS_Tcp_01_Delay);
+                    table.Rows.Add("[Delay] TCP 02", _local.PPS_Tcp_02_Delay);
+                    table.Rows.Add("[판정] TA TYPE", _local.PPS_TA_Type);
+                    table.Rows.Add("[판정] USB_PPS Current Min (mA)", _local.PPS_USB_Current_Min);
+                    table.Rows.Add("[판정] USB_PPS Current Max (mA)", _local.PPS_USB_Current_Max);
+                    table.Rows.Add("[판정] CHG_PPS Current Min (mA)", _local.PPS_CHG_Current_Min);
+                    table.Rows.Add("[판정] CHG_PPS Current Max (mA)", _local.PPS_CHG_Current_Max);
+                    break;
+
+                case "CHARGE COUNT RESET":
+                    table.Rows.Add("[Delay] Step", _local.CHARGE_COUNT_RESET_Step_Delay);
+                    table.Rows.Add("[Delay] PBA Delay", _local.CHARGE_COUNT_RESET_Pba_Delay);
+                    table.Rows.Add("[Delay] TA Delay", _local.CHARGE_COUNT_RESET_TA_Delay); 
+                    table.Rows.Add("[Delay] TCP 01", _local.CHARGE_COUNT_RESET_Tcp_01_Delay);
+                    table.Rows.Add("[Delay] TCP 02", _local.CHARGE_COUNT_RESET_Tcp_02_Delay);
                     break;
 
                 case "MES":
@@ -245,6 +268,27 @@ namespace p2_40_Charge_Tester.Forms
                         else if (param.Contains("CHG_HVDCP Current Max")) _local.HVDCP_CHG_Current_Max = short.Parse(value);
                         break;
 
+                    case "PPS": 
+                        if (param.Contains("Step")) _local.PPS_Step_Delay = int.Parse(value);
+                        else if (param.Contains("PBA Delay")) _local.PPS_Pba_Delay = int.Parse(value);
+                        else if (param.Contains("PPS TA Delay")) _local.PPS_TA_Delay = int.Parse(value);
+                        else if (param.Contains("TCP 01")) _local.PPS_Tcp_01_Delay = int.Parse(value);
+                        else if (param.Contains("TCP 02")) _local.PPS_Tcp_02_Delay = int.Parse(value);
+                        else if (param.Contains("TA TYPE")) _local.PPS_TA_Type = short.Parse(value);
+                        else if (param.Contains("USB_PPS Current Min")) _local.PPS_USB_Current_Min = float.Parse(value);
+                        else if (param.Contains("USB_PPS Current Max")) _local.PPS_USB_Current_Max = float.Parse(value);
+                        else if (param.Contains("CHG_PPS Current Min")) _local.PPS_CHG_Current_Min = short.Parse(value);
+                        else if (param.Contains("CHG_PPS Current Max")) _local.PPS_CHG_Current_Max = short.Parse(value);
+                        break;
+
+                    case "CHARGE COUNT RESET":
+                        if (param.Contains("Step")) _local.CHARGE_COUNT_RESET_Step_Delay = int.Parse(value);
+                        else if (param.Contains("PBA")) _local.CHARGE_COUNT_RESET_Pba_Delay = int.Parse(value);
+                        else if (param.Contains("TA Delay")) _local.CHARGE_COUNT_RESET_TA_Delay = int.Parse(value); 
+                        else if (param.Contains("TCP 01")) _local.CHARGE_COUNT_RESET_Tcp_01_Delay = int.Parse(value);
+                        else if (param.Contains("TCP 02")) _local.CHARGE_COUNT_RESET_Tcp_02_Delay = int.Parse(value);
+                        break;
+
                     case "MES":
                         break;
                 }
@@ -275,6 +319,7 @@ namespace p2_40_Charge_Tester.Forms
                     case "DCP": _local.DCP_Enable = enabled; break;
                     case "MES": _local.MES_Enable = enabled; break;
                     case "HVDCP": _local.HVDCP_Enable = enabled; break;
+                    case "CHARGE COUNT RESET": _local.CHARGE_COUNT_RESET_Enable = enabled; break;
                 }
             }
         }
@@ -331,6 +376,8 @@ namespace p2_40_Charge_Tester.Forms
                 case "DCP": _local.DCP_Enable = enabled; break;
                 case "MES": _local.MES_Enable = enabled; break;
                 case "HVDCP": _local.HVDCP_Enable = enabled; break;
+                case "PPS": _local.PPS_Enable = enabled; break;
+                case "CHARGE COUNT RESET": _local.CHARGE_COUNT_RESET_Enable = enabled; break;
                 default:
                     Console.WriteLine($"알 수 없는 Task: {task}");
                     break;
@@ -354,22 +401,19 @@ namespace p2_40_Charge_Tester.Forms
             JObject settings = new JObject
             {
                 ["INTERLOCK_Enable"] = _local.INTERLOCK_Enable,
-                ["QR_READ_Enable"] = _local.QR_READ_Enable,
-                ["MCU_INFO_Enable"] = _local.MCU_INFO_Enable,
-                ["SDP_Enable"] = _local.SDP_Enable,
-                ["DCP_Enable"] = _local.DCP_Enable,
-                ["MES_Enable"] = _local.MES_Enable,
 
+                ["QR_READ_Enable"] = _local.QR_READ_Enable,
                 ["QR_READ_Step_Delay"] = _local.QR_READ_Step_Delay,
                 ["QR_READ_Len"] = _local.QR_READ_Len,
 
+                ["MCU_INFO_Enable"] = _local.MCU_INFO_Enable,
                 ["MCU_INFO_Step_Delay"] = _local.MCU_INFO_Step_Delay,
                 ["MCU_INFO_Pba_Delay"] = _local.MCU_INFO_Pba_Delay,
                 ["MCU_INFO_Tcp_01_Delay"] = _local.MCU_INFO_Tcp_01_Delay,
                 ["MCU_INFO_Tcp_02_Delay"] = _local.MCU_INFO_Tcp_02_Delay,
-
                 ["MCU_INFO_Mcu_Id_Len"] = _local.MCU_INFO_Mcu_Id_Len,
 
+                ["SDP_Enable"] = _local.SDP_Enable,
                 ["SDP_Step_Delay"] = _local.SDP_Step_Delay,
                 ["SDP_Pba_Delay"] = _local.SDP_Pba_Delay,
                 ["SDP_TA_Delay"] = _local.SDP_TA_Delay,
@@ -381,6 +425,7 @@ namespace p2_40_Charge_Tester.Forms
                 ["SDP_CHG_Current_Min"] = _local.SDP_CHG_Current_Min,
                 ["SDP_CHG_Current_Max"] = _local.SDP_CHG_Current_Max,
 
+                ["DCP_Enable"] = _local.DCP_Enable,
                 ["DCP_Step_Delay"] = _local.DCP_Step_Delay,
                 ["DCP_Pba_Delay"] = _local.DCP_Pba_Delay,
                 ["DCP_TA_Delay"] = _local.DCP_TA_Delay,
@@ -403,6 +448,27 @@ namespace p2_40_Charge_Tester.Forms
                 ["HVDCP_USB_Current_Max"] = _local.HVDCP_USB_Current_Max,
                 ["HVDCP_CHG_Current_Min"] = _local.HVDCP_CHG_Current_Min,
                 ["HVDCP_CHG_Current_Max"] = _local.HVDCP_CHG_Current_Max,
+
+                ["PPS_Enable"] = _local.PPS_Enable,
+                ["PPS_Step_Delay"] = _local.PPS_Step_Delay,
+                ["PPS_Pba_Delay"] = _local.PPS_Pba_Delay,
+                ["PPS_TA_Delay"] = _local.PPS_TA_Delay,
+                ["PPS_Tcp_01_Delay"] = _local.PPS_Tcp_01_Delay,
+                ["PPS_Tcp_02_Delay"] = _local.PPS_Tcp_02_Delay,
+                ["PPS_TA_Type"] = _local.PPS_TA_Type,
+                ["PPS_USB_Current_Min"] = _local.PPS_USB_Current_Min,
+                ["PPS_USB_Current_Max"] = _local.PPS_USB_Current_Max,
+                ["PPS_CHG_Current_Min"] = _local.PPS_CHG_Current_Min,
+                ["PPS_CHG_Current_Max"] = _local.PPS_CHG_Current_Max,
+
+                ["CHARGE_COUNT_RESET_Enable"] = _local.CHARGE_COUNT_RESET_Enable,
+                ["CHARGE_COUNT_RESET_Step_Delay"] = _local.CHARGE_COUNT_RESET_Step_Delay,
+                ["CHARGE_COUNT_RESET_Pba_Delay"] = _local.CHARGE_COUNT_RESET_Pba_Delay,
+                ["CHARGE_COUNT_RESET_TA_Delay"] = _local.CHARGE_COUNT_RESET_TA_Delay, 
+                ["CHARGE_COUNT_RESET_Tcp_01_Delay"] = _local.CHARGE_COUNT_RESET_Tcp_01_Delay,
+                ["CHARGE_COUNT_RESET_Tcp_02_Delay"] = _local.CHARGE_COUNT_RESET_Tcp_02_Delay,
+
+                ["MES_Enable"] = _local.MES_Enable
             };
 
             JObject recipe = new JObject
@@ -497,6 +563,24 @@ namespace p2_40_Charge_Tester.Forms
                 _local.HVDCP_CHG_Current_Min = (short)settings.HVDCP_CHG_Current_Min;
                 _local.HVDCP_CHG_Current_Max = (short)settings.HVDCP_CHG_Current_Max;
 
+                _local.PPS_Enable = settings.PPS_Enable;
+                _local.PPS_Step_Delay = (int)(settings.PPS_Step_Delay);
+                _local.PPS_Pba_Delay = (int)(settings.PPS_Pba_Delay);
+                _local.PPS_TA_Delay = (int)(settings.PPS_TA_Delay);
+                _local.PPS_Tcp_01_Delay = (int)(settings.PPS_Tcp_01_Delay);
+                _local.PPS_Tcp_02_Delay = (int)(settings.PPS_Tcp_02_Delay);
+                _local.PPS_TA_Type = (short)(settings.PPS_TA_Type);
+                _local.PPS_USB_Current_Min = (float)(settings.PPS_USB_Current_Min);
+                _local.PPS_USB_Current_Max = (float)(settings.PPS_USB_Current_Max);
+                _local.PPS_CHG_Current_Min = (short)(settings.PPS_CHG_Current_Min);
+                _local.PPS_CHG_Current_Max = (short)(settings.PPS_CHG_Current_Max);
+
+                _local.CHARGE_COUNT_RESET_Enable = settings.CHARGE_COUNT_RESET_Enable;
+                _local.CHARGE_COUNT_RESET_Step_Delay = (int)(settings.CHARGE_COUNT_RESET_Step_Delay);
+                _local.CHARGE_COUNT_RESET_Pba_Delay = (int)(settings.CHARGE_COUNT_RESET_Pba_Delay);
+                _local.CHARGE_COUNT_RESET_TA_Delay = (int)(settings.CHARGE_COUNT_RESET_TA_Delay); 
+                _local.CHARGE_COUNT_RESET_Tcp_01_Delay = (int)(settings.CHARGE_COUNT_RESET_Tcp_01_Delay);
+                _local.CHARGE_COUNT_RESET_Tcp_02_Delay = (int)(settings.CHARGE_COUNT_RESET_Tcp_02_Delay);
 
                 dgViewTaskList.DataSource = null;
                 dgViewSetValue.DataSource = null;

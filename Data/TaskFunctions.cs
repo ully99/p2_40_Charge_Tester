@@ -17,7 +17,7 @@ namespace p2_40_Charge_Tester.Data
 {
     internal static class TaskFunctions
     {
-        public static async Task<bool> RunTestItem(string taskName, int channelIndex, ChControl control, CancellationToken token)
+        public static async Task<bool> RunTestItem(string taskName, int channelIndex, ChControl control, CancellationToken token, bool totalResult)
         {
             bool result = false;
 
@@ -41,6 +41,13 @@ namespace p2_40_Charge_Tester.Data
                 case "HVDCP":
                     result = await Test_HVDCP(channelIndex, control, token);
                     break;
+                case "PPS":
+                    result = await Test_PPS(channelIndex, control, token);
+                    break;
+                case "CHARGE COUNT RESET":
+                    result = await Test_ChargeCountReset(channelIndex, control, token, totalResult);
+                    break;
+
 
                 default:
                     control.Logger.Info($"이 작업은 구현되지 않았습니다. : {taskName}");
@@ -55,18 +62,6 @@ namespace p2_40_Charge_Tester.Data
         }
 
       
-
-
-
-        
-
-
-
-
-
-
-
-
 
         private static async Task<bool> Test_QrRead(int ch, ChControl control, CancellationToken token)
         {
@@ -561,6 +556,241 @@ namespace p2_40_Charge_Tester.Data
                 string errorMsg = $"[{ch + 1}CH] HVDCP 예외: {ex.Message}";
                 Console.WriteLine(errorMsg);
                 control.Logger.Fail(errorMsg);
+                return false;
+            }
+        }
+
+        private static async Task<bool> Test_PPS(int ch, ChControl control, CancellationToken token)
+        {
+            bool isPass = true;
+
+            var Board = CommManager.Boards[ch];
+            var Pba = CommManager.Pbas[ch];
+            var Module = CommManager.PowerMeterPorts[ch];
+            int module_timeout = 1000;
+            if (!Board.IsConnected())
+            {
+                Console.WriteLine($"TCP가 연결되어있지 않습니다. [CH{ch + 1}]");
+                control.Logger.Fail("TCP is not connected!");
+                return false;
+            }
+            if (!Module.IsConnected())
+            {
+                Console.WriteLine($"POWER-Z MODULE이 연결되어있지 않습니다. [CH{ch + 1}]");
+                control.Logger.Fail("POWER-Z MODULE is not connected!");
+                return false;
+            }
+            try
+            {
+                // Step 0: 검사 시작 전 Delay
+                await Task.Delay(Settings.Instance.PPS_Step_Delay, token);
+
+                // Step 1~5: PPS 시작 커맨드 (0xC5 0x01)
+                byte[] pps_start_tx = new TcpProtocol(0xC5, 0x01).GetPacket();
+                int tcp01_timeout = Settings.Instance.Board_Read_Timeout + Settings.Instance.PPS_Tcp_01_Delay;
+                byte[] pps_start_rx = await Board.SendAndReceivePacketAsync(pps_start_tx, tcp01_timeout, token);
+
+                if (!UtilityFunctions.CheckTcpRxData(pps_start_tx, pps_start_rx))
+                {
+                    control.Logger.Fail("PPS CMD (0xC5 0x01) 응답 이상");
+                    return false;
+                }
+
+                // Step 6: TA 모드 진입 Delay (강제 7000ms)
+                await Task.Delay(Settings.Instance.PPS_TA_Delay, token);
+                bool connectOk = await Pba.ConnectAsync(Return_Pba_Port_Name(ch), Return_Pba_Port_Baudrate(ch), Settings.Instance.Pba_Connect_Timeout, token);
+                if (!connectOk)
+                {
+                    control.Logger.Fail($"PBA connect fail [{Return_Pba_Port_Name(ch)}]");
+                    return false;
+                }
+
+                // Step 7~9: TA 모드 확인 CMD (7F 01)
+                byte[] ta_check_tx = new CDCProtocol(Variable.SLAVE, Variable.READ, Variable.READ_TA_CHECK).GetPacket();
+                int pba_timeout = Settings.Instance.Pba_Read_Timeout + Settings.Instance.PPS_Pba_Delay;
+                byte[] ta_check_rx = await Pba.SendAndReceivePacketAsync_OnlyData(ta_check_tx, pba_timeout, token);
+
+                short taType = (short)((ta_check_rx[0] << 8) | ta_check_rx[1]);
+                if (taType != Settings.Instance.PPS_TA_Type) // Target: 6
+                {
+                    control.Logger.Fail($"TA TYPE : {taType} [{Settings.Instance.PPS_TA_Type}]");
+                    isPass = false;
+                }
+                control.Logger.Pass($"TA TYPE : {taType} [{Settings.Instance.PPS_TA_Type}]");
+
+                // Step 10~12: 배터리 전류 확인 (CHG_PPS Current)
+                byte[] chg_cur_tx = new CDCProtocol(Variable.SLAVE, Variable.READ, Variable.READ_BAT_CURRENT).GetPacket();
+                byte[] chg_cur_rx = await Pba.SendAndReceivePacketAsync_OnlyData(chg_cur_tx, pba_timeout, token);
+
+                if (chg_cur_rx == null || chg_cur_rx.Length < 2)
+                {
+                    control.Logger.Fail("CHG CUR RX receive fail");
+                    return false;
+                }
+
+                short chgCurrent = (short)((chg_cur_rx[0] << 8) | chg_cur_rx[1]);
+                if (chgCurrent < Settings.Instance.PPS_CHG_Current_Min || chgCurrent > Settings.Instance.PPS_CHG_Current_Max)
+                {
+                    control.Logger.Fail($"CHG_PPS Current : {chgCurrent} mA [{Settings.Instance.PPS_CHG_Current_Min} ~" +
+                        $" {Settings.Instance.PPS_CHG_Current_Max}]");
+                    isPass = false;
+                }
+                control.Logger.Pass($"CHG_PPS Current: {chgCurrent} mA [{Settings.Instance.PPS_CHG_Current_Min} ~" +
+                        $" {Settings.Instance.PPS_CHG_Current_Max}]");
+
+                var Getted_value = new PowerMeterValue();
+                Getted_value = await Module.GetValueAsync(module_timeout, token);
+                float Module_Current = Getted_value.Current;
+                if (Module_Current < Settings.Instance.PPS_USB_Current_Min || Module_Current > Settings.Instance.PPS_USB_Current_Max)
+                {
+                    control.Logger.Fail($"USB_PPS Current (getted by power-z) : {Module_Current} " +
+                        $"[{Settings.Instance.PPS_USB_Current_Min} ~ {Settings.Instance.PPS_USB_Current_Max}]");
+                    isPass = false;
+                }
+                control.Logger.Pass($"USB_PPS Current (getted by power-z) : {Module_Current} " +
+                        $"[{Settings.Instance.PPS_USB_Current_Min} ~ {Settings.Instance.PPS_USB_Current_Max}]");
+
+                // Step 14~16: PPS 종료 커맨드 (0xC5 0x02)
+                byte[] pps_end_tx = new TcpProtocol(0xC5, 0x02).GetPacket();
+                int tcp02_timeout = Settings.Instance.Board_Read_Timeout + Settings.Instance.PPS_Tcp_02_Delay;
+                byte[] pps_end_rx = await Board.SendAndReceivePacketAsync(pps_end_tx, tcp02_timeout, token);
+
+                if (!UtilityFunctions.CheckTcpRxData(pps_end_tx, pps_end_rx))
+                {
+                    control.Logger.Fail("PPS END CMD (0xC5 0x02) 응답 이상");
+                    return false;
+                }
+
+                return isPass;
+            }
+            catch (Exception ex)
+            {
+                control.Logger.Fail($"PPS 예외 발생: {ex.Message}");
+                return false;
+            }
+        }
+
+        private static async Task<bool> Test_ChargeCountReset(int ch, ChControl control, CancellationToken token, bool totalResult)
+        {
+            bool isPass = true;
+
+            var Board = CommManager.Boards[ch];
+            var Pba = CommManager.Pbas[ch];
+
+            if (!Board.IsConnected())
+            {
+                Console.WriteLine($"TCP가 연결되어있지 않습니다. [CH{ch + 1}]");
+                control.Logger.Fail("TCP is not connected!");
+                return false;
+            }
+
+            try
+            {
+                // Step 0: 검사 시작 전 Delay
+                await Task.Delay(Settings.Instance.CHARGE_COUNT_RESET_Step_Delay, token);
+
+                // Step 1~5: CHARGING COUNT RESET CMD 전송 (0xC6 0x01)
+                byte[] reset_start_tx = new TcpProtocol(0xC6, 0x01).GetPacket();
+                int tcp01_timeout = Settings.Instance.Board_Read_Timeout + Settings.Instance.CHARGE_COUNT_RESET_Tcp_01_Delay;
+                byte[] reset_start_rx = await Board.SendAndReceivePacketAsync(reset_start_tx, tcp01_timeout, token);
+
+                if (!UtilityFunctions.CheckTcpRxData(reset_start_tx, reset_start_rx))
+                {
+                    control.Logger.Fail("CHARGE COUNT RESET CMD (0xC6 0x01) 응답 이상");
+                    return false;
+                }
+
+                
+                await Task.Delay(Settings.Instance.Pba_On_Delay, token); //TA 딜레이 필요없으므로 On delay 사용
+
+                // PBA 연결 확인
+                bool connectOk = await Pba.ConnectAsync(Return_Pba_Port_Name(ch), Return_Pba_Port_Baudrate(ch), Settings.Instance.Pba_Connect_Timeout, token);
+                if (!connectOk)
+                {
+                    control.Logger.Fail($"PBA connect fail [{Return_Pba_Port_Name(ch)}]");
+                    return false;
+                }
+
+                int pba_timeout = Settings.Instance.Pba_Read_Timeout + Settings.Instance.CHARGE_COUNT_RESET_Pba_Delay;
+
+                // Step 6~7: FIFG_CHARGE_COUNT Write 전송 (0x21C~0x21F Write 0)
+                byte[] count_write_tx = new CDCProtocol(Variable.SLAVE, Variable.MULTI_WRITE, Variable.MULTI_WRITE_FIFG_CHARGE_COUNT).GetPacket();
+                byte[] count_write_rx = await Pba.SendAndReceivePacketAsync(count_write_tx, pba_timeout, token);
+                if (!UtilityFunctions.CheckWriteMultiAck(count_write_tx, count_write_rx))
+                {
+                    control.Logger.Fail($"FIFG CHARGE COUNT write 이상");
+                    return false;
+                }
+
+                // Step 8~10: FIFG_CHARGE_COUNT Read 전송 및 데이터 확인 (00.00)
+                byte[] count_read_tx = new CDCProtocol(Variable.SLAVE, Variable.READ, Variable.READ_FIFG_CHARGE_COUNT).GetPacket();
+                byte[] count_read_rx = await Pba.SendAndReceivePacketAsync_OnlyData(count_read_tx, pba_timeout, token);
+
+                if (count_read_rx == null || count_read_rx.Length < 4)
+                {
+                    control.Logger.Fail("CHARGE COUNT Read fail");
+                    return false;
+                }
+                short charge_count_data_1 = (short)((count_read_rx[0] << 8) | count_read_rx[1]);
+                short charge_count_data_2 = (short)((count_read_rx[2] << 8) | count_read_rx[3]);
+                short charge_count_data_3 = (short)((count_read_rx[4] << 8) | count_read_rx[5]);
+                short charge_count_data_4 = (short)((count_read_rx[6] << 8) | count_read_rx[7]);
+
+                string charge_count_result = $"{charge_count_data_1}{charge_count_data_2}.{charge_count_data_3}{charge_count_data_4}";
+
+                //if (charge_count_data_1 != 0 || charge_count_data_2 != 0 || charge_count_data_3 != 0 || charge_count_data_4 != 0)
+                //{
+                //    Console.WriteLine($"CHARGE COUNT : {charge_count_result}. [CH{ch + 1}]");
+                //}
+
+                Console.WriteLine($"CHARGE COUNT : {charge_count_result}. [CH{ch + 1}]"); //몰래넣는거니까 콘솔창에만 표시
+
+
+                // Step 11~13: Flag Write (PASS: 0BBC 0007) 및 Read 확인
+                byte[] Write_Flag = totalResult ? Variable.WRITE_CHARGE_FLAG_PASS : Variable.WRITE_CHARGE_FLAG_FAIL;
+                short Expected_Flag = (short)((Write_Flag[2] << 8) | Write_Flag[3]);
+
+                byte[] flag_write_tx = new CDCProtocol(Variable.SLAVE, Variable.WRITE, Write_Flag).GetPacket();
+                byte[] flag_write_rx = await Pba.SendAndReceivePacketAsync(flag_write_tx, pba_timeout, token);
+                if (UtilityFunctions.CheckEchoAck(flag_write_tx, flag_write_rx))
+                {
+                    control.Logger.Fail("FLAG WRITE FAIL");
+                    return false;
+                }
+
+                byte[] flag_read_tx = new CDCProtocol(Variable.SLAVE, Variable.READ, Variable.READ_CHARGE_FLAG).GetPacket();
+                byte[] flag_read_rx = await Pba.SendAndReceivePacketAsync_OnlyData(flag_read_tx, pba_timeout, token);
+
+                if (flag_read_rx == null || flag_read_rx.Length < 2)
+                {
+                    control.Logger.Fail($"FLAG Read fail");
+                    return false;
+                }
+
+                short flag_result = (short)((flag_read_rx[0] << 8) | flag_read_rx[1]);
+                if (flag_result != Expected_Flag)
+                {
+                    control.Logger.Fail($"FLAG : {flag_result} [{Expected_Flag}]");
+                    isPass = false;
+                }
+                control.Logger.Pass($"FLAG : {flag_result} [{Expected_Flag}]");
+
+                // Step 14~15: 검사완료 cmd 전송 (초기화 Tester initialize cmd - 0xC6 0x02)
+                byte[] reset_end_tx = new TcpProtocol(0xC6, 0x02).GetPacket();
+                int tcp02_timeout = Settings.Instance.Board_Read_Timeout + Settings.Instance.CHARGE_COUNT_RESET_Tcp_02_Delay;
+                byte[] reset_end_rx = await Board.SendAndReceivePacketAsync(reset_end_tx, tcp02_timeout, token);
+
+                if (!UtilityFunctions.CheckTcpRxData(reset_end_tx, reset_end_rx))
+                {
+                    control.Logger.Fail("CHARGE COUNT RESET END CMD (0xC6 0x02) 응답 이상");
+                    return false;
+                }
+
+                return isPass;
+            }
+            catch (Exception ex)
+            {
+                control.Logger.Fail($"CHARGE COUNT RESET 예외 발생: {ex.Message}");
                 return false;
             }
         }

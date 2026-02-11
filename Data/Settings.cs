@@ -283,6 +283,33 @@ namespace p2_40_Charge_Tester.Data
         public short HVDCP_CHG_Current_Max { get; set; } = 5060;
 
         #endregion
+
+        #region PPS
+        public bool PPS_Enable { get; set; } = true;
+        public int PPS_Step_Delay { get; set; } = 10;
+        public int PPS_Pba_Delay { get; set; } = 10;
+        public int PPS_TA_Delay { get; set; } = 7000;
+        public int PPS_Tcp_01_Delay { get; set; } = 1000;
+        public int PPS_Tcp_02_Delay { get; set; } = 1000;
+        public short PPS_TA_Type { get; set; } = 6;
+        public float PPS_USB_Current_Min { get; set; } = 2070;
+        public float PPS_USB_Current_Max { get; set; } = 2530;
+        public short PPS_CHG_Current_Min { get; set; } = 4140;
+        public short PPS_CHG_Current_Max { get; set; } = 5060;
+
+
+        #endregion
+
+        #region Charge count reset
+        public bool CHARGE_COUNT_RESET_Enable { get; set; } = true;
+        public int CHARGE_COUNT_RESET_Step_Delay { get; set; } = 10;
+        public int CHARGE_COUNT_RESET_Pba_Delay { get; set; } = 200;
+        public int CHARGE_COUNT_RESET_TA_Delay { get; set; } = 1000;
+        public int CHARGE_COUNT_RESET_Tcp_01_Delay { get; set; } = 1000;
+        public int CHARGE_COUNT_RESET_Tcp_02_Delay { get; set; } = 1000;
+
+        #endregion
+
         #region MES
         public bool MES_Enable { get; set; } = true;
         #endregion
