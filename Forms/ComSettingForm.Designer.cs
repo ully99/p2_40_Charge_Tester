@@ -1430,11 +1430,11 @@ namespace p2_40_Charge_Tester.Forms
             this.label34.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.label34.AutoSize = true;
             this.label34.Font = new System.Drawing.Font("Calibri", 11F);
-            this.label34.Location = new System.Drawing.Point(309, 101);
+            this.label34.Location = new System.Drawing.Point(307, 90);
             this.label34.Name = "label34";
-            this.label34.Size = new System.Drawing.Size(117, 23);
+            this.label34.Size = new System.Drawing.Size(121, 45);
             this.label34.TabIndex = 30;
-            this.label34.Text = "PBA ON Delay";
+            this.label34.Text = "PBA ON Delay (ms)";
             // 
             // tboxBoardMinInterval
             // 
@@ -1451,11 +1451,11 @@ namespace p2_40_Charge_Tester.Forms
             this.label33.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.label33.AutoSize = true;
             this.label33.Font = new System.Drawing.Font("Calibri", 11F);
-            this.label33.Location = new System.Drawing.Point(320, 45);
+            this.label33.Location = new System.Drawing.Point(313, 45);
             this.label33.Name = "label33";
-            this.label33.Size = new System.Drawing.Size(94, 45);
+            this.label33.Size = new System.Drawing.Size(109, 45);
             this.label33.TabIndex = 28;
-            this.label33.Text = "Board Min Interval";
+            this.label33.Text = "Board Min Interval (ms)";
             // 
             // tboxPbaMinInterval
             // 
@@ -1472,11 +1472,11 @@ namespace p2_40_Charge_Tester.Forms
             this.label30.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.label30.AutoSize = true;
             this.label30.Font = new System.Drawing.Font("Calibri", 11F);
-            this.label30.Location = new System.Drawing.Point(298, 11);
+            this.label30.Location = new System.Drawing.Point(298, 0);
             this.label30.Name = "label30";
-            this.label30.Size = new System.Drawing.Size(139, 23);
+            this.label30.Size = new System.Drawing.Size(139, 45);
             this.label30.TabIndex = 26;
-            this.label30.Text = "PBA Min Interval";
+            this.label30.Text = "PBA Min Interval (ms)";
             // 
             // checkboxBoardRetry
             // 

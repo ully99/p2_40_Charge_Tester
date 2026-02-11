@@ -32,6 +32,17 @@ namespace p2_40_Charge_Tester.Data
         /// <summary> SDP 전류 확인 CMD (0A), 2바이트 읽기 (mA) </summary>
         public static readonly byte[] READ_BAT_CURRENT = { 0x00, 0x0A, 0x00, 0x01 };
 
+        public static readonly byte[] MULTI_WRITE_FIFG_CHARGE_COUNT = { 0x02, 0x1C, 0x00, 0x04, 0x08,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+        public static readonly byte[] READ_FIFG_CHARGE_COUNT = { 0x02, 0x1C, 0x00, 0x04 };
+
+        public static readonly byte[] WRITE_CHARGE_FLAG_PASS = { 0xB, 0xBC, 0x00, 0x07 };
+        public static readonly byte[] WRITE_CHARGE_FLAG_FAIL = { 0xB, 0xBC, 0x00, 0x03 };
+        public static readonly byte[] READ_CHARGE_FLAG = { 0xB, 0xBC, 0x00, 0x01 };
+
+
+
+
         public static readonly byte[] READ_IMAGE_FW_VER = { 0x00, 0x2A, 0x00, 0x02 };
 
         public static readonly byte[] WRITE_VSYS_EN_PIN_ON = { 0x00, 0x05, 0x00, 0x08 };

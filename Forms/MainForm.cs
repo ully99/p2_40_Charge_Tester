@@ -739,7 +739,7 @@ namespace p2_40_Charge_Tester
                     ch.UpdateItemStatus(step, ChControl.TaskStatus.RUNNING);
 
                     // 2-2) 실제 검사 함수 호출 (Data/TaskFunctions.cs)
-                    bool isPass = await TaskFunctions.RunTestItem(taskName, chIdx, ch, token);
+                    bool isPass = await TaskFunctions.RunTestItem(taskName, chIdx, ch, token, totalResult);
 
                     // 2-3) 결과 처리
                     if (isPass)
