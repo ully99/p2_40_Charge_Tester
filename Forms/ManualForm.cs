@@ -75,7 +75,7 @@ namespace p2_40_Charge_Tester.Forms
 
         private void AllClearSwitch()
         {
-            for (int i = 0; i < 26; i++)
+            for (int i = 0; i < 40; i++)
             {
                 var cbox = this.Controls.Find($"cboxSw{i + 1}", true).FirstOrDefault() as CheckBox;
                 if (cbox != null)
@@ -265,9 +265,9 @@ namespace p2_40_Charge_Tester.Forms
                 Console.WriteLine($"Ps1 Write 중 예외 발생! " + ex.Message);
             }
         }
-        
 
-        
+
+
         private async Task ReadAllSwitch()
         {
             try
@@ -282,17 +282,22 @@ namespace p2_40_Charge_Tester.Forms
                     return;
                 }
 
-                byte[] switchBytes = rx.Skip(7).Take(4).Reverse().ToArray();
+                byte[] switchBytes = rx.Skip(7).Take(5).Reverse().ToArray();
 
-                for (int i = 0; i < 26; i++)
+                for (int i = 0; i < 40; i++)
                 {
                     int byteIndex = i / 8;
                     int bitIndex = i % 8;
-                    bool isOn = (switchBytes[byteIndex] & (1 << bitIndex)) != 0; 
 
+                    // cboxSw1 ~ cboxSw40 매핑
                     var cbox = this.Controls.Find($"cboxSw{i + 1}", true).FirstOrDefault() as CheckBox;
 
-                    if (cbox != null)  cbox.Checked = isOn;
+                    if (cbox != null && byteIndex < switchBytes.Length)
+                    {
+                        // 이미지상 LSB가 낮은 번호 스위치이므로 (1 << bitIndex) 로직 유지
+                        bool isOn = (switchBytes[byteIndex] & (1 << bitIndex)) != 0;
+                        cbox.Checked = isOn;
+                    }
                 }
 
             }
@@ -309,24 +314,18 @@ namespace p2_40_Charge_Tester.Forms
             {
                 if (!CheckChannel()) return;
 
-                byte[] switchBytes = new byte[4];
+                byte[] switchBytes = new byte[5];
 
-                for (int i = 0; i < 26; i++)
+                for (int i = 0; i < 40; i++)
                 {
                     var cbox = this.Controls.Find($"cboxSw{i + 1}", true).FirstOrDefault() as CheckBox;
-                    if (cbox != null)
+                    if (cbox != null && cbox.Checked)
                     {
-                        if (cbox.Checked)
-                        {
-                            int byteIndex = i / 8;
-                            int bitIndex = i % 8;
-                            switchBytes[byteIndex] |= (byte)(1 << bitIndex);
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine($"cboxSw{i + 1} 컨트롤을 찾지 못함");
-                        return;
+                        int byteIndex = i / 8;
+                        int bitIndex = i % 8;
+
+                        // 로컬 배열은 [Num 1, Num 2, Num 3, Num 4, Num 5] 순서로 채워짐
+                        switchBytes[byteIndex] |= (byte)(1 << bitIndex);
                     }
                 }
 

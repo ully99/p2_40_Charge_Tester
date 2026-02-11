@@ -344,7 +344,7 @@ namespace p2_40_Charge_Tester.Forms
             this.tableLayoutPanel2.ColumnCount = 3;
             this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 200F));
             this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 362F));
+            this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 364F));
             this.tableLayoutPanel2.Controls.Add(this.groupBox1, 0, 0);
             this.tableLayoutPanel2.Controls.Add(this.groupBox8, 1, 0);
             this.tableLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -423,7 +423,7 @@ namespace p2_40_Charge_Tester.Forms
             this.groupBox8.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox8.Location = new System.Drawing.Point(207, 5);
             this.groupBox8.Name = "groupBox8";
-            this.groupBox8.Size = new System.Drawing.Size(996, 135);
+            this.groupBox8.Size = new System.Drawing.Size(994, 135);
             this.groupBox8.TabIndex = 1;
             this.groupBox8.TabStop = false;
             this.groupBox8.Text = "PBA Info";
@@ -435,7 +435,7 @@ namespace p2_40_Charge_Tester.Forms
             this.panel3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel3.Location = new System.Drawing.Point(3, 24);
             this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(990, 108);
+            this.panel3.Size = new System.Drawing.Size(988, 108);
             this.panel3.TabIndex = 0;
             // 
             // table131312
@@ -458,7 +458,7 @@ namespace p2_40_Charge_Tester.Forms
             this.table131312.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
             this.table131312.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
             this.table131312.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
-            this.table131312.Size = new System.Drawing.Size(990, 108);
+            this.table131312.Size = new System.Drawing.Size(988, 108);
             this.table131312.TabIndex = 1;
             // 
             // label12
@@ -705,7 +705,7 @@ namespace p2_40_Charge_Tester.Forms
             "Ship Mode",
             "전류값",
             "디버깅 비활성화"});
-            this.comboBox1.Location = new System.Drawing.Point(3, 9);
+            this.comboBox1.Location = new System.Drawing.Point(3, 6);
             this.comboBox1.Name = "comboBox1";
             this.comboBox1.Size = new System.Drawing.Size(194, 29);
             this.comboBox1.TabIndex = 1;
